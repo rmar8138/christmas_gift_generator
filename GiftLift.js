@@ -1,5 +1,6 @@
 const axios = require("axios");
 const Gift = require("./Gift");
+const { randomDistinctNumbers } = require("./utility_service");
 
 class GiftList {
   constructor(queries) {
@@ -14,11 +15,10 @@ class GiftList {
     }
   }
 
-  getGiftsFromQueries() {
-    // call etsy API here
-
+  async getGiftsFromQueries() {
     const promises = [];
 
+    // call etsy api for each query and add promise to array
     this.queries.forEach(query => {
       promises.push(
         axios.get("https://openapi.etsy.com/v2/listings/active", {
@@ -31,22 +31,26 @@ class GiftList {
       );
     });
 
-    return Promise.all(promises).then(data => {
-      data.forEach(({ data }) => {
-        const allResults = data.results.map(result => result);
+    try {
+      let responses = await Promise.all(promises);
 
-        for (let i = 0; i < 2; i++) {
-          const random =
-            allResults[Math.floor(Math.random() * allResults.length)];
-          const newGift = new Gift(
-            random.title,
-            random.description,
-            random.price
-          );
-          this.addGift(newGift);
-        }
-      });
-    });
+      for (let response of responses) {
+        const { results } = response.data;
+        const indexes = randomDistinctNumbers(results.length);
+
+        this.createGiftsFromResultsIndexes(indexes, results);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  createGiftsFromResultsIndexes(indexes, results) {
+    for (let index of indexes) {
+      const { title, description, price } = results[index];
+
+      this.addGift(new Gift(title, description, price));
+    }
   }
 }
 
