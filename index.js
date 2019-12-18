@@ -9,4 +9,6 @@ const queries = kidsXmasGiftsQuestionnaire.run();
 
 const newList = new GiftList(queries);
 
-console.log(newList);
+newList.getGiftsFromQueries().then(() => {
+  console.log(newList.list);
+});
